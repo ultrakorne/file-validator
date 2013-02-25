@@ -1,0 +1,7 @@
+//
+// Prefix header for all source files of the 'file-validator' target in the 'file-validator' project
+//
+
+#ifdef __OBJC__
+    #import <Foundation/Foundation.h>
+#endif
