@@ -30,6 +30,44 @@ static NSString *const fingerprintFile = @"fingerprints";
     return sharedInstance;
 }
 
++ (NSString*)unObfuscateSecret:(NSString *)obfuscatedSecret
+{
+    NSString *theSecret = nil;
+
+    int len = [obfuscatedSecret length];
+    char *obfuscatedSecretArr = [obfuscatedSecret UTF8String];
+    char unobfuscatedSecret[64];
+
+    int ptr = 0;
+
+    // get the first 32 prime numbered characters from the obfuscated Secret :)
+    for (int i = 2; i < len; i++)
+    {
+        BOOL isPrime = YES;
+        for (int j = 2; j < i; j++)
+        {
+            if ( i % j == 0 )
+                isPrime = NO;
+        }
+
+        if ( isPrime && ptr < 32 )
+        {
+            unobfuscatedSecret[ptr++] = obfuscatedSecretArr[i];
+            unobfuscatedSecret[ptr] = 0;
+            if ( ptr == 32 )
+                break;
+        }
+    }
+
+    theSecret = [NSString stringWithCString:unobfuscatedSecret encoding:NSASCIIStringEncoding];
+    return theSecret;
+}
+
++ (void)setObfuscatedSecret:(NSString *)obfuscatedSecret
+{
+    [FVFileValidator setSecret:[FVFileValidator unObfuscateSecret:obfuscatedSecret]];
+}
+
 + (void)setSecret:(NSString *)secret
 {
     [FVFileValidator validator].secret = secret;
