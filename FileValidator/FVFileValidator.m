@@ -105,6 +105,22 @@ static NSString *const fingerprintFile = @"fingerprints";
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
+
+
++(void) signFile:(NSString *)fileName
+{
+    if(![FVFileValidator validator].fingerDic)
+    {
+        [NSException raise:NSObjectNotAvailableException format:@"file %@.plist not found", fingerprintFile];
+    }
+
+    NSString *hash = [self SHA2ofFile:fileName];
+
+    [[FVFileValidator validator].fingerDic setObject:hash forKey:fileName];
+    [[FVFileValidator validator] synchronizeFingerDic];
+
+}
+
 + (BOOL)validateFile:(NSString *)fileName
 {
     if(![FVFileValidator validator].fingerDic)
@@ -162,7 +178,9 @@ static NSString *const fingerprintFile = @"fingerprints";
     }
     
     [fileData appendData:[secret dataUsingEncoding:NSUTF8StringEncoding]];
-     
+
+    //NSLog(@"%s", [fileData bytes]);
+
     unsigned char hash[CC_SHA256_DIGEST_LENGTH];
     if( CC_SHA256([fileData bytes], [fileData length], hash) )
     {
@@ -182,4 +200,5 @@ static NSString *const fingerprintFile = @"fingerprints";
     
     return nil;
 }
+
 @end
