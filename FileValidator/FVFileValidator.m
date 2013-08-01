@@ -14,6 +14,7 @@ static NSString *const fingerprintFile = @"fingerprints";
 @interface FVFileValidator()
 
 @property (nonatomic, copy) NSString *secret;
+@property (nonatomic, strong) NSMutableDictionary *fingerDic;
 
 @end
 
@@ -73,20 +74,52 @@ static NSString *const fingerprintFile = @"fingerprints";
     [FVFileValidator validator].secret = secret;
 }
 
+- (NSMutableDictionary *)fingerDic
+{
+    if (_fingerDic == nil)
+    {
+        // load the fingerprintFile
+        NSString *path = [[NSBundle mainBundle] pathForResource:fingerprintFile ofType:@"plist"];
+        NSDictionary *fingerDic = [NSDictionary dictionaryWithContentsOfFile:path];
+
+        // update the NSUserdefaults with the newest fingerprintFile Contents ( could be newer because of e.g. App Update )
+
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:fingerprintFile] == nil)
+        {
+            _fingerDic = [NSMutableDictionary dictionaryWithDictionary:fingerDic];
+        }
+        else {
+            _fingerDic = [NSMutableDictionary dictionaryWithDictionary:[[NSUserDefaults standardUserDefaults] objectForKey:fingerprintFile]];
+            // always overwrite the NSUserDefaults values with the ones from the fingerprint plist !
+            // this is important for updates, where we ship other versions of the signed files with a new version of the fingerprint file
+            [_fingerDic addEntriesFromDictionary:fingerDic];
+        }
+        [self synchronizeFingerDic];
+    }
+    return _fingerDic;
+}
+
+-(void) synchronizeFingerDic
+{
+    [[NSUserDefaults standardUserDefaults] setObject:_fingerDic forKey:fingerprintFile];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
 + (BOOL)validateFile:(NSString *)fileName
 {
-    NSString *path = [[NSBundle mainBundle] pathForResource:fingerprintFile ofType:@"plist"];
-    NSDictionary *fingerDic = [NSDictionary dictionaryWithContentsOfFile:path];
-
-    if(!fingerDic)
+    if(![FVFileValidator validator].fingerDic)
     {
         [NSException raise:NSObjectNotAvailableException format:@"file %@.plist not found", fingerprintFile];
     }
     
-    NSString *expectedHash = [fingerDic objectForKey:fileName];
+    NSString *expectedHash = [[FVFileValidator validator].fingerDic objectForKey:fileName];
     if(!expectedHash)
     {
-       [NSException raise:NSInternalInconsistencyException format:@"file %@ not present in %@", fileName, fingerprintFile];
+        NSLog(@"file %@ not present in %@", fileName, fingerprintFile);
+        return NO;
+        // since how we can "sign" files, and the fingerprint-"file" is now a mutable dictionary synced in the userdefaults, we can assume some of them are not signed yet and instead of throwing an exception, this is now a normal case of a tampering attempt
+
+       // [NSException raise:NSInternalInconsistencyException format:@"file %@ not present in %@", fileName, fingerprintFile];
     }
     
     if( [self validateFile:fileName expectedHash:expectedHash] )
