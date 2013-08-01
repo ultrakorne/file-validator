@@ -24,9 +24,19 @@ Calling validateFile: will return YES if the file is valid (the sha256 of fileto
 
 forgetting to set the secret, create the fingerprints.plist, having the entry of the file we want to check in the fingerprints.plist will raise an Exception
 
+Now supports mutable fingerprints, stored in the NSUserDefaults, and always overwritten with the contents of the fingerprints.plist file, to enable app updates. You can add a signature to a file you trust to be correct ( which you modified or created ) using 
+
+```
+[FVFileValidator signFile:@"filetosecure.plist"];
+```
+
+Not having the file in fingerprints.plist will now just silentry return false instead of throwing an exception.
+
+
 
 TODO
 -----
 
-- [ ] ruby script for filling the fingerprints.plist with the right hashes as a pre build script to run in xcode
-- [ ] some bit operation to obfuscate a bit the secret
+- [ x ] ~~ruby~~ python script for filling the fingerprints.plist with the right hashes 
+- [ ] the above script modified as a pre build script to run in xcode
+- [ x ] some ~~bit~~ byte operation to obfuscate a bit the secret

@@ -10,7 +10,11 @@
 
 @interface FVFileValidator : NSObject
 
++ (void)signFile:(NSString *)fileName;
+
 + (BOOL)validateFile:(NSString *)fileName;
+
 + (void)setSecret:(NSString *)secret;
 
++ (void)setObfuscatedSecret:(NSString *)string;
 @end
